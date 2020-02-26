@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, TextInput, StyleSheet } from 'react-native'
+import { View, TextInput, StyleSheet, Text } from 'react-native'
 import Icon from 'react-native-vector-icons/FontAwesome'
 
 const SearchInput = (props) => {
@@ -9,7 +9,8 @@ const SearchInput = (props) => {
         style={styles.textInput}
         placeholder='Type here ...'
         placeholderTextColor="#252525"
-        onChangeText={props.onPress}
+        value={props.valueSearch}
+        onFocus={props.onPress}
       />
       <Icon name="search"
         size={25}

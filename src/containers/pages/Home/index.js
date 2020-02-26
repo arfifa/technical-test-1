@@ -1,11 +1,13 @@
 import React, { Component } from 'react'
 import { StyleSheet, Text, View, ScrollView, TextInput, TouchableOpacity, Alert, } from 'react-native'
-
-import { Picker, Item } from 'native-base';
+import { Picker, Item } from 'native-base'
 import Icon from 'react-native-vector-icons/FontAwesome'
+import { connect } from 'react-redux'
+
+import { searchTask } from '../../../config/redux/action/tasks'
 
 import NoteList from '../../organisms/NoteList'
-import HeaderNoteList from '../../organisms/HeaderNoteList/iindex'
+import HeaderNoteList from '../../organisms/HeaderNoteList/index'
 
 class Home extends Component {
   constructor(props) {
@@ -26,20 +28,27 @@ class Home extends Component {
       editText: '',
       editCategory: '',
       edit: false,
-      add: false,
-      search: [{
-        search: false,
-        keyword: '',
-        category: ''
-      }]
+      add: false
     }
   }
 
-  addNote() {
+  async addNote() {
     this.setState({
       add: !this.state.add
     })
     if (this.state.add === true) {
+      await this.props.dispatch(searchTask({
+        keyword: '',
+        category: [{
+          name: 'Work',
+          checked: false
+        },
+        {
+          name: 'School',
+          checked: false
+        }]
+      }
+      ))
       if (this.state.noteText && this.state.category) {
         let d = new Date()
         let id = this.state.noteArray.length
@@ -87,12 +96,63 @@ class Home extends Component {
     if (checkNoteData) {
       checkNoteData.isDone = !checkNote.isDone
       this.setState([...noteArray])
-
     }
   }
 
+  _handleSearch = async () => {
+    await this.props.dispatch(searchTask({
+      keyword: '',
+      category: [{
+        name: 'Work',
+        checked: false
+      },
+      {
+        name: 'School',
+        checked: false
+      }]
+    }
+    ))
+    this.props.navigation.navigate('SearchNoteList')
+  }
+
   render() {
-    let notes = this.state.noteArray.map((val, key) => {
+    const { noteArray } = this.state
+    const { category, keyword } = this.props.tasks.search
+    const filterKeyword = category.filter(k => k.checked === true)
+    var notes = this.state.noteArray
+    if (keyword.length > 0 || filterKeyword.length > 0) {
+      if (keyword.length > 0 && filterKeyword.length > 0) {
+        let filterTask = []
+        let filter
+        filterKeyword.map(f => {
+          filter = noteArray.filter(n => ((n.note.toLowerCase().indexOf(keyword.toLowerCase()) !== -1) && (n.category === f.name))
+          )
+          if (filter != []) {
+            filter.map(f => filterTask.push(f))
+          }
+        })
+        notes = filterTask
+        console.log(filterTask)
+      } else if (keyword.length > 0) {
+        const filterTask = noteArray.filter(n => (n.note.toLowerCase().indexOf(keyword.toLowerCase())) !== -1)
+        notes = [...filterTask]
+      } else if (filterKeyword.length > 0) {
+        let filterTask = []
+        let filter
+        filterKeyword.map(f => {
+          filter = noteArray.filter(n => ((n.category === f.name))
+          )
+          if (filter != []) {
+            filter.map(f => filterTask.push(f))
+          }
+        })
+        notes = filterTask
+        console.log(filterTask)
+      }
+    }
+
+
+    const viewNotes = notes.map((val, key) => {
       return <NoteList
         key={key}
         keyval={key}
@@ -104,10 +164,11 @@ class Home extends Component {
     return (
       <View style={styles.container}>
         <HeaderNoteList
-          onPress={() => this.props.navigation.navigate('SearchNoteList')}
+          onPress={() => this._handleSearch()}
+          valueSearch={keyword}
         />
         <ScrollView style={styles.scrollContainer}>
-          {notes}
+          {viewNotes}
         </ScrollView>
         {this.state.edit ?
           <View style={styles.footer}>
@@ -216,4 +277,9 @@ const styles = StyleSheet.create(
   }
 )
 
-export default Home
+const mapStateToProps = (state) => {
+  return {
+    tasks: state.tasks
+  }
+}
+export default connect(mapStateToProps)(Home)

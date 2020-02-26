@@ -9,7 +9,10 @@ export class HeaderNoteList extends Component {
     return (
       <View>
         <Header />
-        <SearchInput onPress={this.props.onPress} />
+        <SearchInput
+          onPress={this.props.onPress}
+          valueSearch={this.props.valueSearch}
+        />
       </View>
     )
   }

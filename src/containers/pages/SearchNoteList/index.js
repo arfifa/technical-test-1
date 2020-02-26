@@ -1,40 +1,40 @@
 import React, { Component } from 'react'
 import { TextInput, View, StyleSheet, Text } from 'react-native'
 import { CheckBox, ListItem, Body, Button } from 'native-base'
+import { connect } from 'react-redux'
+
+import { searchTask } from '../../../config/redux/action/tasks'
 
 export class SearchNoteList extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      search: false,
-      keyword: '',
-      catagory: '',
-      checked1: false,
-      checked2: false
+      search: this.props.tasks.search,
     }
   }
 
   _handleCheckbox = categories => {
-    if (categories === "Work") {
-      this.setState({
-        category: categories,
-        checked1: !this.state.checked1
-      })
-    } else if (categories === "School") {
-      this.setState({
-        category: categories,
-        checked2: !this.state.checked2
-      })
+    const { category } = this.state.search
+    const find = category.find(c => c.name === categories.name)
+    if (find) {
+      find.checked = !categories.checked
+      this.setState([...category])
     }
   }
 
-  _handleSearh = () => {
-    if (this.state.keyword.length > 0 || this.state.checked1 === true || this.state.checked2 === true) {
-      alert('ok')
+  _handleSearh = async () => {
+    const { category, keyword } = this.state.search
+    const find = category.find(c => c.checked === true)
+    if (find || keyword.length > 0) {
+      await this.props.dispatch(searchTask(this.state.search))
+      this.props.navigation.navigate('Home')
+    } else {
+      this.props.navigation.navigate('Home')
     }
   }
 
   render() {
+    const { category } = this.state.search
     return (
       <View style={styles.container}>
         <TextInput
@@ -42,27 +42,24 @@ export class SearchNoteList extends Component {
           placeholder="Type note keyword here ..."
           style={styles.textInput}
           onChangeText={(keyword) => this.setState({
-            keyword
+            search: {
+              ...this.state.search,
+              keyword
+            }
           })}
         />
         <View style={styles.containerCategory}>
-          <Text>category</Text>
-          <ListItem onPress={(work) => this._handleCheckbox(work = "Work")}>
-            <CheckBox
-              checked={this.state.checked1} style={styles.checkBox}
-              onPress={(work) => this._handleCheckbox(work = "Work")} />
-            <Body>
-              <Text>Work</Text>
-            </Body>
-          </ListItem>
-          <ListItem onPress={(school) => this._handleCheckbox(school = "School")}>
-            <CheckBox
-              checked={this.state.checked2} style={styles.checkBox}
-              onPress={(school) => this._handleCheckbox(school = "School")} />
-            <Body>
-              <Text>School</Text>
-            </Body>
-          </ListItem>
+          <Text>Category</Text>
+          {category.map(c =>
+            <ListItem onPress={() => this._handleCheckbox(c)} key={c.name}>
+              <CheckBox
+                checked={c.checked} style={styles.checkBox}
+                onPress={() => this._handleCheckbox(c)} />
+              <Body>
+                <Text>{c.name}</Text>
+              </Body>
+            </ListItem>
+          )}
         </View>
         <Button primary
           style={styles.btnSearch}
@@ -103,4 +100,10 @@ const styles = StyleSheet.create(
   }
 )
 
-export default SearchNoteList
+const mapStateToProps = (state) => {
+  return {
+    tasks: state.tasks
+  }
+}
+
+export default connect(mapStateToProps)(SearchNoteList)
